@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mysns - 회원가입</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1 class="logo">mysns</h1>
+
+        <!-- flash 메시지 : 이메일 중복 등 가입 실패 안내 -->
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <!-- 비밀번호 확인 불일치 안내 (자바스크립트에서 표시) -->
+        <div id="pwMismatch" class="alert alert-error" style="display:none;">
+            비밀번호가 일치하지 않습니다.
+        </div>
+
+        <form name="signupForm" th:action="@{/signup}" method="post"
+              onsubmit="return checkPassword();">
+            <input type="email" name="email" placeholder="이메일" required autofocus>
+            <input type="password" name="password" id="password"
+                   placeholder="비밀번호" required>
+            <input type="password" id="passwordConfirm"
+                   placeholder="비밀번호 확인" required>
+            <button type="submit" class="btn-primary">가입하기</button>
+        </form>
+
+        <p class="auth-footer">
+            이미 계정이 있으신가요?
+            <a th:href="@{/login}">로그인하기</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    // 제출 전 비밀번호/비밀번호 확인 일치 여부 검사
+    function checkPassword() {
+        const pw = document.getElementById('password').value;
+        const pwConfirm = document.getElementById('passwordConfirm').value;
+        const mismatchAlert = document.getElementById('pwMismatch');
+
+        if (pw !== pwConfirm) {
+            mismatchAlert.style.display = 'block';
+            return false; // 제출 중단
+        }
+        mismatchAlert.style.display = 'none';
+        return true;
+    }
+</script>
+</body>
+</html>

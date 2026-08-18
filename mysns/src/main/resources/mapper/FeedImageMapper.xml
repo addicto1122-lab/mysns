@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    피드 사진(feed_images) 관련 SQL
+    image_url 에는 디스크 경로가 아니라 웹 경로(/upload/xxx.jpg)가 들어감
+-->
+<mapper namespace="com.spring.mysns.repository.FeedImageMapper">
+
+    <!-- 사진 등록 -->
+    <insert id="insert" parameterType="FeedImage" useGeneratedKeys="true" keyProperty="imageId">
+        INSERT INTO feed_images (feed_id, image_url, sort_order)
+        VALUES (#{feedId}, #{imageUrl}, #{sortOrder})
+    </insert>
+
+    <!-- 특정 피드의 사진 목록 (sort_order 작은 것부터) -->
+    <select id="findByFeedId" resultType="FeedImage">
+        SELECT image_id,
+               feed_id,
+               image_url,
+               sort_order,
+               created_at
+        FROM feed_images
+        WHERE feed_id = #{feedId}
+        ORDER BY sort_order, image_id
+    </select>
+
+    <!-- 특정 피드의 사진 전부 삭제 -->
+    <delete id="deleteByFeedId">
+        DELETE FROM feed_images
+        WHERE feed_id = #{feedId}
+    </delete>
+
+</mapper>

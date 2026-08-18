@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>mysns - 공통 헤더</title>
+</head>
+<body>
+<!--
+    다른 화면에서 아래처럼 삽입해서 사용
+    <div th:replace="~{layout/header :: header}"></div>
+-->
+<header th:fragment="header" class="header">
+    <div class="header-inner">
+        <span class="logo">mysns</span>
+        <div class="header-user">
+            <span th:text="${session.loginEmail}"></span>
+            <a th:href="@{/logout}" class="btn-logout">로그아웃</a>
+        </div>
+    </div>
+</header>
+</body>
+</html>

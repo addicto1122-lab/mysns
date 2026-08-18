@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mysns - 로그인</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1 class="logo">mysns</h1>
+
+        <!-- flash 메시지 : 회원가입 성공 / 로그아웃 안내 -->
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <!-- flash 메시지 : 로그인 실패 / 로그인 필요 안내 -->
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form th:action="@{/login}" method="post">
+            <!-- 로그인 실패 시 flash로 넘어온 이메일 유지 -->
+            <input type="email" name="email" placeholder="이메일"
+                   th:value="${email}" required autofocus>
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <button type="submit" class="btn-primary">로그인</button>
+        </form>
+
+        <p class="auth-footer">
+            계정이 없으신가요?
+            <a th:href="@{/signup}">가입하기</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

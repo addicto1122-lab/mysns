@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>날씨 정보</title>
+</head>
+<body>
+<h1>날씨 정보</h1>
+<p th:text="${weather.get('PTY')}"></p>
+<p th:text="${weather.get('REH')}"></p>
+<p th:text="${weather.get('RN1')}"></p>
+<p th:text="${weather.get('T1H')}"></p>
+<p th:text="${weather.get('UUU')}"></p>
+</body>
+</html>

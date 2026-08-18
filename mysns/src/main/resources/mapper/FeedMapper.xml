@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.mysns.repository.FeedMapper">
+
+    <!-- 전체 피드 개수 (페이지 수 계산에 필요) -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM feeds
+    </select>
+
+    <!--
+        한 페이지 분량의 피드 목록 (최신순)
+
+        [사진을 JOIN이 아니라 서브쿼리로 가져오는 이유]
+        JOIN으로 붙이면 사진이 여러 장일 때 피드 행이 사진 수만큼 뻥튀기된다.
+        서브쿼리는 "피드 한 줄마다 대표 사진 한 장"만 정확히 가져온다.
+
+        [ORDER BY에 feed_id를 쓰는 이유]
+        created_at은 같은 초에 등록되면 값이 겹칠 수 있어
+        페이지를 넘길 때 같은 글이 중복되거나 빠질 수 있다.
+        절대 겹치지 않는 feed_id 기준이면 순서가 항상 일정하다.
+    -->
+    <select id="findPage" parameterType="Paging" resultType="Feed">
+        SELECT f.feed_id,
+               f.user_id,
+               f.content,
+               f.created_at,
+               f.updated_at,
+               (SELECT fi.image_url
+                FROM feed_images fi
+                WHERE fi.feed_id = f.feed_id
+                ORDER BY fi.sort_order, fi.image_id
+                LIMIT 1) AS image_url
+        FROM feeds f
+        ORDER BY f.feed_id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!--
+        피드 작성
+        useGeneratedKeys : INSERT 후 DB가 만든 번호가 feed.feedId에 자동으로 채워짐
+        -> 사진(feed_images) 저장 시 이 번호가 필요하므로 필수 설정
+    -->
+    <insert id="insert" parameterType="Feed" useGeneratedKeys="true" keyProperty="feedId">
+        INSERT INTO feeds (user_id, content)
+        VALUES (#{userId}, #{content})
+    </insert>
+
+    <!-- 피드 단건 조회 (삭제 전 작성자 확인용) -->
+    <select id="findById" resultType="Feed">
+        SELECT feed_id,
+               user_id,
+               content,
+               created_at,
+               updated_at
+        FROM feeds
+        WHERE feed_id = #{feedId}
+    </select>
+
+    <!-- 피드 수정 : 작성자 본인 조건 포함 -->
+    <update id="update">
+        UPDATE feeds
+        SET content    = #{content},
+            updated_at = NOW()
+        WHERE feed_id = #{feedId}
+          AND user_id = #{userId}
+    </update>
+
+    <!-- 피드 삭제 : 작성자 본인 조건 포함 -->
+    <delete id="delete">
+        DELETE FROM feeds
+        WHERE feed_id = #{feedId}
+          AND user_id = #{userId}
+    </delete>
+
+</mapper>

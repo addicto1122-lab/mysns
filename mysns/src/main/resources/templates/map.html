@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Kakao 지도 검색</title>
+
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        #search-box {
+            width: 100%;
+            height: 60px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        #keyword {
+            width: 300px;
+            height: 35px;
+            padding: 0 10px;
+
+            font-size: 16px;
+        }
+
+        #search-btn,
+        #reset-btn {
+            height: 39px;
+            padding: 0 20px;
+
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #map {
+            width: 100%;
+            height: calc(100vh - 60px);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- 검색 영역 -->
+<div id="search-box">
+
+    <input
+            type="text"
+            id="keyword"
+            placeholder="장소를 입력하세요"
+    >
+
+    <button
+            id="search-btn"
+            onclick="searchPlaces()">
+        검색
+    </button>
+
+    <button
+            id="reset-btn"
+            onclick="resetMap()">
+        초기화
+    </button>
+
+</div>
+
+
+<!-- 지도 -->
+<div id="map"></div>
+
+
+<!-- Kakao 지도 SDK -->
+<!-- 장소 검색 사용을 위해 libraries=services 추가 -->
+<script
+        type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=8c444c1c9d0cb2e832b0f1708d9c6cc8&libraries=services">
+</script>
+
+
+<script>
+
+    // 처음 지도가 보여질 위치
+    var defaultPosition =
+        new kakao.maps.LatLng(
+            37.5665,
+            126.9780
+        );
+
+
+    // 지도 영역을 가져옴
+    var container =
+        document.getElementById('map');
+
+
+    // 지도 기본 설정
+    var options = {
+
+        center: defaultPosition,
+
+        // 지도 확대 수준
+        level: 3
+    };
+
+
+    // 지도 생성
+    var map =
+        new kakao.maps.Map(
+            container,
+            options
+        );
+
+
+    // 장소 검색 객체 생성
+    var ps =
+        new kakao.maps.services.Places();
+
+
+    // 현재 지도에 표시된 마커
+    var marker = null;
+
+
+    // 현재 지도에 표시된 장소 이름 창
+    var infowindow = null;
+
+
+    // 검색 버튼 클릭시 실행
+    function searchPlaces() {
+
+        // 검색창에 입력한 값 가져오기
+        var keyword =
+            document.getElementById('keyword').value;
+
+
+        // 검색어가 없으면
+        if (keyword.trim() === '') {
+
+            alert('검색어를 입력해주세요.');
+
+            return;
+        }
+
+
+        // 키워드로 장소 검색
+        ps.keywordSearch(
+            keyword,
+            placesSearchCallback
+        );
+    }
+
+
+    // 장소 검색 결과를 받는 함수
+    function placesSearchCallback(data, status) {
+
+        // 검색 성공
+        if (
+            status ===
+            kakao.maps.services.Status.OK
+        ) {
+
+            // 검색 결과 중 첫 번째 장소
+            var place = data[0];
+
+
+            // 검색된 장소 좌표
+            var coords =
+                new kakao.maps.LatLng(
+                    place.y,
+                    place.x
+                );
+
+
+            // 기존 마커가 있다면 제거
+            if (marker !== null) {
+
+                marker.setMap(null);
+            }
+
+
+            // 기존 장소 이름 창이 있다면 제거
+            if (infowindow !== null) {
+
+                infowindow.close();
+            }
+
+
+            // 새로운 마커 생성
+            marker =
+                new kakao.maps.Marker({
+
+                    map: map,
+
+                    position: coords
+                });
+
+
+            // 검색된 장소로 지도 이동
+            map.setCenter(coords);
+
+
+            // 장소 이름 표시
+            infowindow =
+                new kakao.maps.InfoWindow({
+
+                    content:
+                        '<div style="padding:5px;font-size:14px;">'
+                        + place.place_name
+                        + '</div>'
+                });
+
+
+            // 마커 위에 장소 이름 표시
+            infowindow.open(
+                map,
+                marker
+            );
+        }
+
+
+        // 검색 결과 없음
+        else if (
+            status ===
+            kakao.maps.services.Status.ZERO_RESULT
+        ) {
+
+            alert('검색 결과가 없습니다.');
+        }
+
+
+        // 검색 오류
+        else if (
+            status ===
+            kakao.maps.services.Status.ERROR
+        ) {
+
+            alert('검색 중 오류가 발생했습니다.');
+        }
+    }
+
+
+    // 초기화 버튼 클릭시 실행
+    function resetMap() {
+
+        // 마커 제거
+        if (marker !== null) {
+
+            marker.setMap(null);
+
+            marker = null;
+        }
+
+
+        // 장소 이름 창 제거
+        if (infowindow !== null) {
+
+            infowindow.close();
+
+            infowindow = null;
+        }
+
+
+        // 검색창 비우기
+        document.getElementById('keyword').value = '';
+
+
+        // 지도 처음 위치로 이동
+        map.setCenter(defaultPosition);
+
+
+        // 지도 확대 수준도 처음으로 되돌리기
+        map.setLevel(3);
+    }
+
+
+    // 엔터키로도 검색 가능
+    document
+        .getElementById('keyword')
+        .addEventListener(
+            'keydown',
+            function(event) {
+
+                if (event.key === 'Enter') {
+
+                    searchPlaces();
+                }
+            }
+        );
+
+</script>
+
+</body>
+</html>

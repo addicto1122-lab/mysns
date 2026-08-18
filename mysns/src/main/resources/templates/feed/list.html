@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mysns - 피드</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!-- 공통 헤더 -->
+<div th:replace="~{layout/header :: header}"></div>
+
+<main class="feed-container">
+
+    <!-- flash 메시지 -->
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+    <!-- 피드 작성 : 사진 첨부를 위해 enctype="multipart/form-data" 필수 -->
+    <section class="feed-write">
+        <form th:action="@{/feeds}" method="post" enctype="multipart/form-data">
+            <textarea name="content" maxlength="500"
+                      placeholder="무슨 일이 일어나고 있나요?" required></textarea>
+            <!-- 첨부한 사진 미리보기 -->
+            <img id="imagePreview" class="image-preview" alt="첨부 사진 미리보기">
+            <div class="feed-write-actions">
+                <label class="btn-file" for="imageInput">📷 사진 첨부</label>
+                <input type="file" id="imageInput" name="image"
+                       accept="image/*" hidden onchange="previewImage(this);">
+                <button type="submit" class="btn-primary">게시하기</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- 피드 목록 -->
+    <section>
+        <!-- 피드가 하나도 없을 때 -->
+        <div th:if="${#lists.isEmpty(feeds)}" class="feed-empty">
+            아직 등록된 피드가 없습니다.<br>첫 번째 피드를 작성해보세요!
+        </div>
+
+        <!-- 피드 카드 반복 출력 -->
+        <article class="feed-card" th:each="feed : ${feeds}">
+            <div class="feed-top">
+                <div class="feed-author">
+                    <!-- 이메일 첫 글자로 아바타 표시 -->
+                    <div class="avatar" th:text="${#strings.substring(feed.userId, 0, 1)}"></div>
+                    <div>
+                        <div class="feed-email" th:text="${feed.userId}"></div>
+                        <div class="feed-date"
+                             th:text="${#temporals.format(feed.createdAt, 'yyyy.MM.dd HH:mm')}
+                                      + (${feed.updatedAt} != null ? ' (수정됨)' : '')"></div>
+                    </div>
+                </div>
+
+                <!-- 본인 글일 때만 수정/삭제 버튼 노출 -->
+                <div class="feed-actions" th:if="${feed.userId == loginEmail}">
+                    <button type="button" class="btn-mini"
+                            th:onclick="'toggleEdit(' + ${feed.feedId} + ');'">수정</button>
+                    <form th:action="@{/feeds/{id}/delete(id=${feed.feedId})}" method="post"
+                          onsubmit="return confirm('피드를 삭제하시겠습니까?');">
+                        <!-- 삭제 후에도 보고 있던 페이지로 돌아가기 위해 페이지 번호를 함께 전송 -->
+                        <input type="hidden" name="page" th:value="${paging.page}">
+                        <button type="submit" class="btn-mini danger">삭제</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 피드 내용 -->
+            <p class="feed-content" th:text="${feed.content}"></p>
+
+            <!-- 첨부 사진 (있을 때만 표시) -->
+            <img th:if="${feed.imageUrl}" class="feed-image"
+                 th:src="@{${feed.imageUrl}}" alt="피드 사진">
+
+            <!-- 인라인 수정 폼 (수정 버튼 클릭 시 열림) -->
+            <form class="edit-form" th:id="'edit-form-' + ${feed.feedId}"
+                  th:action="@{/feeds/{id}/edit(id=${feed.feedId})}" method="post">
+                <input type="hidden" name="page" th:value="${paging.page}">
+                <textarea name="content" maxlength="500" required
+                          th:text="${feed.content}"></textarea>
+                <div class="edit-form-actions">
+                    <button type="button" class="btn-mini"
+                            th:onclick="'toggleEdit(' + ${feed.feedId} + ');'">취소</button>
+                    <button type="submit" class="btn-mini">수정 완료</button>
+                </div>
+            </form>
+        </article>
+    </section>
+
+    <!--
+        페이지 번호
+        paging 안에 계산된 값들이 들어있음
+        @{/feeds(page=${i})} 는 /feeds?page=1 같은 주소를 만들어줌
+    -->
+    <nav class="pagination" th:if="${paging.totalPages > 1}">
+        <!-- 이전 -->
+        <a th:if="${paging.hasPrev}" class="page-link"
+           th:href="@{/feeds(page=${paging.page - 1})}">&lsaquo; 이전</a>
+        <span th:unless="${paging.hasPrev}" class="page-link disabled">&lsaquo; 이전</span>
+
+        <!-- 페이지 번호 (startPage ~ endPage 반복) -->
+        <th:block th:each="i : ${#numbers.sequence(paging.startPage, paging.endPage)}">
+            <!-- 지금 보고 있는 페이지는 링크 대신 강조 표시 -->
+            <span th:if="${i == paging.page}" class="page-link current" th:text="${i}">1</span>
+            <a th:unless="${i == paging.page}" class="page-link"
+               th:href="@{/feeds(page=${i})}" th:text="${i}">1</a>
+        </th:block>
+
+        <!-- 다음 -->
+        <a th:if="${paging.hasNext}" class="page-link"
+           th:href="@{/feeds(page=${paging.page + 1})}">다음 &rsaquo;</a>
+        <span th:unless="${paging.hasNext}" class="page-link disabled">다음 &rsaquo;</span>
+    </nav>
+
+    <!-- 전체 개수 표시 -->
+    <p class="list-info" th:if="${paging.totalCount > 0}">
+        전체 <span th:text="${paging.totalCount}">0</span>개 ·
+        <span th:text="${paging.page}">1</span> / <span th:text="${paging.totalPages}">1</span> 페이지
+    </p>
+
+</main>
+
+<script>
+    // 수정 폼 열기/닫기
+    function toggleEdit(feedId) {
+        document.getElementById('edit-form-' + feedId).classList.toggle('open');
+    }
+
+    // 첨부한 사진 미리보기
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const file = input.files && input.files[0];
+
+        if (!file) {
+            preview.style.display = 'none';
+            return;
+        }
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    }
+</script>
+</body>
+</html>
